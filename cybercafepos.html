@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CYBER CAFE - POS System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0d0f;
+  --card:#17171a;
+  --card2:#1e1e22;
+  --border:#2a2a2f;
+  --text:#f0f0f0;
+  --muted:#6b6b75;
+  --accent:#f7ca04;
+  --green:#22c55e;
+  --blue:#3b82f6;
+  --red:#ef4444;
+  --orange:#f97316;
+  --purple:#a855f7;
+}
+
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* LOGIN */
+#login-screen{width:100%;max-width:360px;margin:auto;}
+.login-card{background:var(--card);border-radius:20px;padding:2rem;border:1px solid var(--border);}
+.login-logo{text-align:center;margin-bottom:1.8rem;}
+.login-logo .icon{font-size:38px;margin-bottom:8px;}
+.login-logo h1{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-.02em;}
+.login-logo p{font-size:12px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.1em;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;}
+.form-group select,.form-group input{width:100%;padding:11px 13px;background:var(--card2);border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);font-family:inherit;outline:none;}
+.form-group select:focus,.form-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(247,202,4,.1);}
+.login-btn{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.login-btn:hover{opacity:.9;}
+.login-err{color:var(--red);font-size:12px;margin-top:8px;text-align:center;min-height:18px;}
+
+/* FIREBASE ERR */
+.firebase-err{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:1000;}
+.firebase-err.show{display:block;}
+
+/* SYNC */
+.sync-status{position:fixed;top:12px;right:12px;font-size:11px;padding:5px 12px;background:var(--card);border-radius:20px;border:1px solid var(--border);z-index:100;}
+.sync-status.synced{color:var(--green);}
+.sync-status.syncing{color:var(--accent);}
+.sync-status.error{color:var(--red);}
+
+/* APP */
+#app-screen{width:100%;max-width:960px;margin:auto;}
+.app-bar{background:var(--card);border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:none;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.app-bar-left{display:flex;align-items:center;gap:12px;}
+.av{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.user-info .uname{font-size:15px;font-weight:700;color:var(--text);}
+.user-info .urole{font-size:11px;color:var(--muted);}
+.user-info .udate{font-size:11px;color:var(--muted);margin-top:2px;}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;}
+.logout-btn:hover{border-color:var(--accent);color:var(--text);}
+
+.app-body{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 16px 16px;padding:20px;overflow-y:auto;max-height:76vh;}
+
+.section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;text-transform:uppercase;letter-spacing:.1em;}
+
+/* CATEGORY TABS */
+.cat-tabs{display:flex;gap:6px;margin-bottom:18px;}
+.cat-tab{flex:1;padding:10px 8px;background:var(--card2);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center;transition:all .2s;font-family:inherit;}
+.cat-tab:hover{border-color:var(--accent);color:var(--text);}
+.cat-tab.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.cat-tab .tab-icon{display:block;font-size:18px;margin-bottom:3px;}
+
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* INPUTS */
+.input-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.input-row label{font-size:12px;font-weight:600;color:var(--muted);min-width:90px;}
+.input-row input{flex:1;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;}
+.input-row input:focus{outline:none;border-color:var(--accent);}
+
+.record-btn{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit;}
+.record-btn:hover{opacity:.88;}
+.record-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* TOTALS SUMMARY */
+.totals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;}
+.total-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.total-card .tc-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.total-card .tc-val{font-size:18px;font-weight:700;color:var(--text);}
+.total-card.cyber .tc-val{color:var(--blue);}
+.total-card.fifa .tc-val{color:var(--green);}
+.total-card.gta .tc-val{color:var(--orange);}
+
+.grand-staff-box{background:var(--card2);border:1px solid var(--accent);border-radius:10px;padding:14px;text-align:center;margin-top:12px;}
+.grand-staff-box .gs-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.grand-staff-box .gs-val{font-size:24px;font-weight:800;color:var(--accent);margin-top:4px;}
+
+.commission-badge{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;}
+.commission-badge.hit{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+.commission-badge.none{background:rgba(107,107,117,.1);color:var(--muted);border:1px solid var(--border);}
+
+/* TABLE */
+.sales-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+.sales-table th{background:var(--card2);padding:9px 8px;text-align:left;font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;}
+.sales-table td{padding:9px 8px;border-bottom:1px solid var(--border);font-size:12px;}
+.sales-table tr:hover td{background:rgba(247,202,4,.04);}
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;}
+.del-btn:hover{color:var(--red);}
+
+/* CEO */
+.date-section{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:20px;}
+.date-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:10px;letter-spacing:.06em;}
+.date-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.date-input{padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);font-family:inherit;}
+.date-input:focus{outline:none;border-color:var(--accent);}
+.date-btn{padding:9px 16px;background:var(--accent);color:#000;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.date-btn.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.date-btn.secondary:hover{border-color:var(--accent);}
+
+.staff-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.staff-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.staff-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px;}
+
+/* CEO category tabs */
+.ceo-cat-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.ceo-tab{flex:1;padding:7px 4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center;font-family:inherit;}
+.ceo-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(247,202,4,.08);}
+
+.ceo-tab-panel{display:none;}
+.ceo-tab-panel.active{display:block;}
+
+.amount-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.amount-row:last-child{border-bottom:none;}
+.amount-label{color:var(--muted);}
+.amount-val{font-weight:700;}
+.amount-val.cash{color:var(--green);}
+.amount-val.till{color:var(--blue);}
+
+.staff-totals-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.st-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.st-box .stb-label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.st-box .stb-val{font-size:15px;font-weight:700;}
+.st-box.cyber .stb-val{color:var(--blue);}
+.st-box.fifa .stb-val{color:var(--green);}
+.st-box.gta .stb-val{color:var(--orange);}
+
+.staff-grand{margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--accent);border-radius:10px;display:flex;justify-content:space-between;align-items:center;}
+.staff-grand .sg-label{font-size:12px;color:var(--muted);}
+.staff-grand .sg-val{font-size:20px;font-weight:800;color:var(--accent);}
+
+.commission-row{margin-top:10px;padding:10px 12px;border-radius:8px;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+.commission-row.earned{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25);}
+.commission-row.not-earned{background:rgba(107,107,117,.08);color:var(--muted);border:1px solid var(--border);}
+
+.grand-total-box{background:linear-gradient(135deg,var(--accent),#e6b800);color:#000;border-radius:12px;padding:20px;text-align:center;margin-top:16px;}
+.grand-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:4px;}
+.grand-val{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;}
+
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.empty-box{text-align:center;padding:24px;color:var(--muted);font-size:12px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:#000;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;}
+
+.staff-btn-float{position:fixed;bottom:28px;right:28px;z-index:9999;display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:var(--accent);color:#000;font-family:inherit;font-size:13px;font-weight:700;text-decoration:none;border-radius:50px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+
+option{background:#17171a;}
+</style>
+</head>
+<body>
+
+<div class="firebase-err" id="firebase-err"></div>
+<div class="sync-status" id="sync-status">🔄 Syncing...</div>
+
+<!-- LOGIN -->
+<div id="login-screen" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">💻</div>
+      <h1>CYBER CAFE</h1>
+      <p>POS System</p>
+    </div>
+    <div class="form-group">
+      <label>Select Name</label>
+      <select id="login-user"></select>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="screen">
+  <div class="app-bar">
+    <div class="app-bar-left">
+      <div class="av" id="av-initials">WI</div>
+      <div class="user-info">
+        <div class="uname" id="bar-name">Winnie</div>
+        <div class="urole" id="bar-role">Staff</div>
+        <div class="udate" id="bar-date"></div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+
+  <div class="app-body">
+
+    <!-- ====== STAFF SECTION ====== -->
+    <div id="staff-section">
+      <div class="section-title">📝 Record Amount Received</div>
+
+      <!-- Category Tabs -->
+      <div class="cat-tabs">
+        <button class="cat-tab active" onclick="switchStaffTab('cyber',this)">
+          <span class="tab-icon">🖥️</span>Cyber
+        </button>
+        <button class="cat-tab" onclick="switchStaffTab('fifa',this)">
+          <span class="tab-icon">⚽</span>FIFA
+        </button>
+        <button class="cat-tab" onclick="switchStaffTab('gta',this)">
+          <span class="tab-icon">🎮</span>GTA
+        </button>
+      </div>
+
+      <!-- Cyber Tab -->
+      <div class="tab-panel active" id="tab-cyber">
+        <div class="input-row">
+          <label>💵 Cash:</label>
+          <input type="number" id="cyber-cash" placeholder="0" min="0" step="100"/>
+        </div>
+        <div class="input-row">
+          <label>📲 Till:</label>
+          <input type="number" id="cyber-till" placeholder="0" min="0" step="100"/>
+        </div>
+        <button class="record-btn" onclick="recordAmount('Cyber')">✓ Record Cyber Amount</button>
+        <table class="sales-table">
+          <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th></tr></thead>
+          <tbody id="log-cyber"><tr><td colspan="4" class="empty-box">No records yet</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- FIFA Tab -->
+      <div class="tab-panel" id="tab-fifa">
+        <div class="input-row">
+          <label>💵 Cash:</label>
+          <input type="number" id="fifa-cash" placeholder="0" min="0" step="100"/>
+        </div>
+        <div class="input-row">
+          <label>📲 Till:</label>
+          <input type="number" id="fifa-till" placeholder="0" min="0" step="100"/>
+        </div>
+        <button class="record-btn" onclick="recordAmount('FIFA')">✓ Record FIFA Amount</button>
+        <table class="sales-table">
+          <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th></tr></thead>
+          <tbody id="log-fifa"><tr><td colspan="4" class="empty-box">No records yet</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- GTA Tab -->
+      <div class="tab-panel" id="tab-gta">
+        <div class="input-row">
+          <label>💵 Cash:</label>
+          <input type="number" id="gta-cash" placeholder="0" min="0" step="100"/>
+        </div>
+        <div class="input-row">
+          <label>📲 Till:</label>
+          <input type="number" id="gta-till" placeholder="0" min="0" step="100"/>
+        </div>
+        <button class="record-btn" onclick="recordAmount('GTA')">✓ Record GTA Amount</button>
+        <table class="sales-table">
+          <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th></tr></thead>
+          <tbody id="log-gta"><tr><td colspan="4" class="empty-box">No records yet</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-title">📊 Today's Summary</div>
+      <div class="totals-grid">
+        <div class="total-card cyber"><div class="tc-label">🖥️ Cyber</div><div class="tc-val" id="staff-cyber-total">KSh 0</div></div>
+        <div class="total-card fifa"><div class="tc-label">⚽ FIFA</div><div class="tc-val" id="staff-fifa-total">KSh 0</div></div>
+        <div class="total-card gta"><div class="tc-label">🎮 GTA</div><div class="tc-val" id="staff-gta-total">KSh 0</div></div>
+      </div>
+      <div class="grand-staff-box">
+        <div class="gs-label">Grand Total Today</div>
+        <div class="gs-val" id="staff-grand-total">KSh 0</div>
+        <div id="staff-commission-badge" class="commission-badge none">—</div>
+      </div>
+    </div>
+
+    <!-- ====== CEO SECTION ====== -->
+    <div id="CEO-section" style="display:none;">
+      <div class="section-title">📅 Select Date</div>
+      <div class="date-section">
+        <div class="date-label">Choose Date</div>
+        <div class="date-controls">
+          <button class="date-btn secondary" onclick="gotoPrevDay()">← Prev</button>
+          <input type="date" id="date-picker" class="date-input" onchange="changeViewDate()"/>
+          <button class="date-btn secondary" onclick="goToToday()">Today</button>
+          <button class="date-btn secondary" onclick="goToNextDay()">Next →</button>
+        </div>
+      </div>
+
+      <div class="staff-grid">
+        <!-- WINNIE -->
+        <div class="staff-card">
+          <div class="staff-name">👩‍💼 Winnie</div>
+          <div class="ceo-cat-tabs">
+            <button class="ceo-tab active" onclick="switchCEOTab('winnie','Cyber',this)">🖥️ Cyber</button>
+            <button class="ceo-tab" onclick="switchCEOTab('winnie','FIFA',this)">⚽ FIFA</button>
+            <button class="ceo-tab" onclick="switchCEOTab('winnie','GTA',this)">🎮 GTA</button>
+          </div>
+          <div class="ceo-tab-panel active" id="ceo-winnie-Cyber">
+            <table class="sales-table">
+              <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th><th></th></tr></thead>
+              <tbody id="ceo-winnie-Cyber-log"><tr><td colspan="5" class="empty-box">No records</td></tr></tbody>
+            </table>
+            <div class="amount-row"><span class="amount-label">Cash:</span><span class="amount-val cash" id="ceo-winnie-Cyber-cash">KSh 0</span></div>
+            <div class="amount-row"><span class="amount-label">Till:</span><span class="amount-val till" id="ceo-winnie-Cyber-till">KSh 0</span></div>
+          </div>
+          <div class="ceo-tab-panel" id="ceo-winnie-FIFA">
+            <table class="sales-table">
+              <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th><th></th></tr></thead>
+              <tbody id="ceo-winnie-FIFA-log"><tr><td colspan="5" class="empty-box">No records</td></tr></tbody>
+            </table>
+            <div class="amount-row"><span class="amount-label">Cash:</span><span class="amount-val cash" id="ceo-winnie-FIFA-cash">KSh 0</span></div>
+            <div class="amount-row"><span class="amount-label">Till:</span><span class="amount-val till" id="ceo-winnie-FIFA-till">KSh 0</span></div>
+          </div>
+          <div class="ceo-tab-panel" id="ceo-winnie-GTA">
+            <table class="sales-table">
+              <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th><th></th></tr></thead>
+              <tbody id="ceo-winnie-GTA-log"><tr><td colspan="5" class="empty-box">No records</td></tr></tbody>
+            </table>
+            <div class="amount-row"><span class="amount-label">Cash:</span><span class="amount-val cash" id="ceo-winnie-GTA-cash">KSh 0</span></div>
+            <div class="amount-row"><span class="amount-label">Till:</span><span class="amount-val till" id="ceo-winnie-GTA-till">KSh 0</span></div>
+          </div>
+          <div class="staff-totals-row">
+            <div class="st-box cyber"><div class="stb-label">Cyber</div><div class="stb-val" id="ceo-winnie-cyber-t">0</div></div>
+            <div class="st-box fifa"><div class="stb-label">FIFA</div><div class="stb-val" id="ceo-winnie-fifa-t">0</div></div>
+            <div class="st-box gta"><div class="stb-label">GTA</div><div class="stb-val" id="ceo-winnie-gta-t">0</div></div>
+          </div>
+          <div class="staff-grand">
+            <span class="sg-label">Winnie Total</span>
+            <span class="sg-val" id="ceo-winnie-grand">KSh 0</span>
+          </div>
+          <div class="commission-row not-earned" id="ceo-winnie-commission">No commission yet</div>
+        </div>
+
+        <!-- KEN -->
+        <div class="staff-card">
+          <div class="staff-name">👨‍💼 Ken</div>
+          <div class="ceo-cat-tabs">
+            <button class="ceo-tab active" onclick="switchCEOTab('ken','Cyber',this)">🖥️ Cyber</button>
+            <button class="ceo-tab" onclick="switchCEOTab('ken','FIFA',this)">⚽ FIFA</button>
+            <button class="ceo-tab" onclick="switchCEOTab('ken','GTA',this)">🎮 GTA</button>
+          </div>
+          <div class="ceo-tab-panel active" id="ceo-ken-Cyber">
+            <table class="sales-table">
+              <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th><th></th></tr></thead>
+              <tbody id="ceo-ken-Cyber-log"><tr><td colspan="5" class="empty-box">No records</td></tr></tbody>
+            </table>
+            <div class="amount-row"><span class="amount-label">Cash:</span><span class="amount-val cash" id="ceo-ken-Cyber-cash">KSh 0</span></div>
+            <div class="amount-row"><span class="amount-label">Till:</span><span class="amount-val till" id="ceo-ken-Cyber-till">KSh 0</span></div>
+          </div>
+          <div class="ceo-tab-panel" id="ceo-ken-FIFA">
+            <table class="sales-table">
+              <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th><th></th></tr></thead>
+              <tbody id="ceo-ken-FIFA-log"><tr><td colspan="5" class="empty-box">No records</td></tr></tbody>
+            </table>
+            <div class="amount-row"><span class="amount-label">Cash:</span><span class="amount-val cash" id="ceo-ken-FIFA-cash">KSh 0</span></div>
+            <div class="amount-row"><span class="amount-label">Till:</span><span class="amount-val till" id="ceo-ken-FIFA-till">KSh 0</span></div>
+          </div>
+          <div class="ceo-tab-panel" id="ceo-ken-GTA">
+            <table class="sales-table">
+              <thead><tr><th>Cash</th><th>Till</th><th>Total</th><th>Time</th><th></th></tr></thead>
+              <tbody id="ceo-ken-GTA-log"><tr><td colspan="5" class="empty-box">No records</td></tr></tbody>
+            </table>
+            <div class="amount-row"><span class="amount-label">Cash:</span><span class="amount-val cash" id="ceo-ken-GTA-cash">KSh 0</span></div>
+            <div class="amount-row"><span class="amount-label">Till:</span><span class="amount-val till" id="ceo-ken-GTA-till">KSh 0</span></div>
+          </div>
+          <div class="staff-totals-row">
+            <div class="st-box cyber"><div class="stb-label">Cyber</div><div class="stb-val" id="ceo-ken-cyber-t">0</div></div>
+            <div class="st-box fifa"><div class="stb-label">FIFA</div><div class="stb-val" id="ceo-ken-fifa-t">0</div></div>
+            <div class="st-box gta"><div class="stb-label">GTA</div><div class="stb-val" id="ceo-ken-gta-t">0</div></div>
+          </div>
+          <div class="staff-grand">
+            <span class="sg-label">Ken Total</span>
+            <span class="sg-val" id="ceo-ken-grand">KSh 0</span>
+          </div>
+          <div class="commission-row not-earned" id="ceo-ken-commission">No commission yet</div>
+        </div>
+      </div>
+
+      <!-- GRAND TOTAL -->
+      <div class="grand-total-box">
+        <div class="grand-label">Grand Total — All Staff</div>
+        <div class="grand-val">KSh <span id="grand-total">0</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<a href="index.html" class="staff-btn-float">🏠 Home</a>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCyvdFCewvjweOVpVgN3rLJaysLKHDGAes",
+  authDomain: "ultimate-flame-gas-centr-65cc3.firebaseapp.com",
+  databaseURL: "https://ultimate-flame-gas-centr-65cc3-default-rtdb.firebaseio.com",
+  projectId: "ultimate-flame-gas-centr-65cc3",
+  storageBucket: "ultimate-flame-gas-centr-65cc3.appspot.com",
+  messagingSenderId: "1027793228898",
+  appId: "1:1027793228898:web:381b830537c93703e96d3b"
+};
+
+const USERS = [
+  { name:"Winnie", password:"Winnie@254", role:"staff" },
+  { name:"Ken",    password:"Ken255",    role:"staff" },
+  { name:"Tedd",   password:"9998",  role:"CEO" },
+];
+
+const CATS = ["Cyber","FIFA","GTA"];
+let db, currentUser = null, viewDate = new Date();
+const sales = [];
+
+// ---- FIREBASE ----
+function initFirebase() {
+  try {
+    if(typeof firebase==='undefined'){showFirebaseError("Firebase SDK not loaded.");setSyncStatus("Offline","error");return;}
+    if(firebase.apps.length===0) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    setSyncStatus("Connected","synced");
+  } catch(err) {
+    showFirebaseError("Firebase error: "+err.message);
+    setSyncStatus("Offline","error");
+  }
+}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',initFirebase):initFirebase();
+
+// ---- HELPERS ----
+function fmt(n){return Number(n).toLocaleString("en-KE");}
+function initials(n){return n.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);}
+function fmtDate(d){return d.toLocaleDateString("en-KE",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});}
+function fmtDT(d){return d.toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"});}
+function fmtYMD(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2500);}
+function setSyncStatus(l,s){const e=document.getElementById("sync-status");e.textContent=(s==="syncing"?"🔄 ":"")+l;e.className="sync-status "+s;}
+function showFirebaseError(msg){const e=document.getElementById("firebase-err");e.textContent=msg;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),5000);}
+
+// Commission logic
+function getCommission(total) {
+  if(total >= 2000) return {amount: 100, label:"🏆 KSh 100 Commission Earned!"};
+  if(total >= 1000) return {amount: 50,  label:"⭐ KSh 50 Commission Earned!"};
+  return {amount: 0, label: total >= 500 ? "Almost there — keep pushing!" : "No commission yet"};
+}
+
+// ---- LOGIN ----
+function buildLoginSelect(){
+  const sel=document.getElementById("login-user");
+  sel.innerHTML=USERS.map((u,i)=>`<option value="${i}">${u.name}</option>`).join("");
+}
+
+function doLogin(){
+  const idx=parseInt(document.getElementById("login-user").value);
+  const pass=document.getElementById("login-pass").value;
+  const user=USERS[idx];
+  if(user && pass===user.password){
+    currentUser=user;
+    document.getElementById("login-err").textContent="";
+    document.getElementById("login-pass").value="";
+    launchApp();
+  } else {
+    document.getElementById("login-err").textContent="Incorrect password";
+  }
+}
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById("login-screen").classList.add("active");
+  document.getElementById("app-screen").classList.remove("active");
+}
+
+function launchApp(){
+  document.getElementById("login-screen").classList.remove("active");
+  document.getElementById("app-screen").classList.add("active");
+  document.getElementById("av-initials").textContent=initials(currentUser.name);
+  document.getElementById("bar-name").textContent=currentUser.name;
+  document.getElementById("bar-role").textContent=currentUser.role==="CEO"?"CEO":"Staff";
+  document.getElementById("bar-date").textContent=fmtDate(new Date());
+
+  const isCEO=currentUser.role==="CEO";
+  document.getElementById("staff-section").style.display=isCEO?"none":"block";
+  document.getElementById("CEO-section").style.display=isCEO?"block":"none";
+
+  loadDataFromFirebase();
+  if(isCEO){viewDate=new Date();document.getElementById("date-picker").value=fmtYMD(viewDate);}
+}
+
+// ---- FIREBASE LOAD ----
+function loadDataFromFirebase(){
+  setSyncStatus("Loading...","syncing");
+  db.ref("cyber_sales").on("value",snapshot=>{
+    sales.length=0;
+    const data=snapshot.val();
+    if(data) Object.entries(data).forEach(([id,sale])=>sales.push({...sale,id}));
+    if(currentUser.role==="CEO") renderCEODash();
+    else renderStaffDash();
+    setSyncStatus("Synced","synced");
+  },err=>{
+    showFirebaseError("Load failed: "+err.message);
+  });
+}
+
+// ---- STAFF TABS ----
+function switchStaffTab(cat, btn){
+  document.querySelectorAll(".cat-tab").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("tab-"+cat).classList.add("active");
+}
+
+// ---- RECORD AMOUNT ----
+function recordAmount(category){
+  const catKey = category.toLowerCase();
+  const cash = parseInt(document.getElementById(catKey+"-cash").value)||0;
+  const till = parseInt(document.getElementById(catKey+"-till").value)||0;
+
+  if(cash===0 && till===0){toast("Enter at least one amount");return;}
+  setSyncStatus("Recording...","syncing");
+
+  const newSale={
+    employee: currentUser.name,
+    category,
+    cash, till,
+    total: cash+till,
+    time: Date.now(),
+    date: fmtYMD(new Date())
+  };
+
+  db.ref("cyber_sales").push().set(newSale).then(()=>{
+    toast(`${category} amount recorded!`);
+    document.getElementById(catKey+"-cash").value="";
+    document.getElementById(catKey+"-till").value="";
+    setSyncStatus("Synced","synced");
+  }).catch(err=>{
+    showFirebaseError("Save failed: "+err.message);
+    setSyncStatus("Error","error");
+  });
+}
+
+// ---- RENDER STAFF DASH ----
+function renderStaffDash(){
+  const today=fmtYMD(new Date());
+  const mySales=sales.filter(s=>s.employee===currentUser.name && s.date===today);
+
+  let grandTotal=0;
+  CATS.forEach(cat=>{
+    const catSales=mySales.filter(s=>s.category===cat);
+    const catTotal=catSales.reduce((a,s)=>a+s.total,0);
+    grandTotal+=catTotal;
+
+    const logEl=document.getElementById("log-"+cat.toLowerCase());
+    if(!catSales.length){
+      logEl.innerHTML=`<tr><td colspan="4" class="empty-box">No records yet</td></tr>`;
+    } else {
+      logEl.innerHTML=catSales.map(s=>`<tr>
+        <td>KSh ${fmt(s.cash)}</td>
+        <td>KSh ${fmt(s.till)}</td>
+        <td>KSh ${fmt(s.total)}</td>
+        <td>${fmtDT(new Date(s.time))}</td>
+      </tr>`).join("");
+    }
+
+    const labelMap={Cyber:"cyber",FIFA:"fifa",GTA:"gta"};
+    document.getElementById("staff-"+labelMap[cat]+"-total").textContent="KSh "+fmt(catTotal);
+  });
+
+  document.getElementById("staff-grand-total").textContent="KSh "+fmt(grandTotal);
+
+  const comm=getCommission(grandTotal);
+  const badge=document.getElementById("staff-commission-badge");
+  if(comm.amount>0){
+    badge.className="commission-badge hit";
+    badge.textContent="💰 "+comm.label;
+  } else {
+    badge.className="commission-badge none";
+    badge.textContent=comm.label;
+  }
+}
+
+// ---- CEO TABS ----
+function switchCEOTab(person, cat, btn){
+  const card=btn.closest(".staff-card");
+  card.querySelectorAll(".ceo-tab").forEach(b=>b.classList.remove("active"));
+  card.querySelectorAll(".ceo-tab-panel").forEach(p=>p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("ceo-"+person+"-"+cat).classList.add("active");
+}
+
+// ---- RENDER CEO DASH ----
+function renderCEODash(){
+  const dateStr=fmtYMD(viewDate);
+  const people=["Winnie","Ken"];
+  let grand=0;
+
+  people.forEach(person=>{
+    const pKey=person.toLowerCase();
+    const pSales=sales.filter(s=>s.employee===person && s.date===dateStr);
+    let personTotal=0;
+
+    CATS.forEach(cat=>{
+      const catSales=pSales.filter(s=>s.category===cat);
+      const catCash=catSales.reduce((a,s)=>a+s.cash,0);
+      const catTill=catSales.reduce((a,s)=>a+s.till,0);
+      const catTotal=catSales.reduce((a,s)=>a+s.total,0);
+      personTotal+=catTotal;
+
+      // sub-totals in tab
+      document.getElementById("ceo-"+pKey+"-"+cat+"-cash").textContent="KSh "+fmt(catCash);
+      document.getElementById("ceo-"+pKey+"-"+cat+"-till").textContent="KSh "+fmt(catTill);
+
+      // table rows
+      const logEl=document.getElementById("ceo-"+pKey+"-"+cat+"-log");
+      if(!catSales.length){
+        logEl.innerHTML=`<tr><td colspan="5" class="empty-box">No records</td></tr>`;
+      } else {
+        logEl.innerHTML=catSales.map(s=>`<tr>
+          <td>KSh ${fmt(s.cash)}</td>
+          <td>KSh ${fmt(s.till)}</td>
+          <td>KSh ${fmt(s.total)}</td>
+          <td>${fmtDT(new Date(s.time))}</td>
+          <td><button class="del-btn" onclick="deleteSale('${s.id}')">🗑️</button></td>
+        </tr>`).join("");
+      }
+
+      // mini totals row
+      const catMap={Cyber:"cyber",FIFA:"fifa",GTA:"gta"};
+      document.getElementById("ceo-"+pKey+"-"+catMap[cat]+"-t").textContent=fmt(catTotal);
+    });
+
+    document.getElementById("ceo-"+pKey+"-grand").textContent="KSh "+fmt(personTotal);
+    grand+=personTotal;
+
+    const comm=getCommission(personTotal);
+    const commEl=document.getElementById("ceo-"+pKey+"-commission");
+    if(comm.amount>0){
+      commEl.className="commission-row earned";
+      commEl.textContent="💰 "+comm.label;
+    } else {
+      commEl.className="commission-row not-earned";
+      commEl.textContent=comm.label;
+    }
+  });
+
+  document.getElementById("grand-total").textContent=fmt(grand);
+}
+
+function changeViewDate(){
+  const val=document.getElementById("date-picker").value;
+  if(!val) return;
+  const [y,m,d]=val.split("-");
+  viewDate=new Date(y,m-1,d);
+  renderCEODash();
+}
+
+function goToToday(){viewDate=new Date();document.getElementById("date-picker").value=fmtYMD(viewDate);renderCEODash();}
+function gotoPrevDay(){viewDate.setDate(viewDate.getDate()-1);document.getElementById("date-picker").value=fmtYMD(viewDate);renderCEODash();}
+function goToNextDay(){viewDate.setDate(viewDate.getDate()+1);document.getElementById("date-picker").value=fmtYMD(viewDate);renderCEODash();}
+
+function deleteSale(saleId){
+  if(!currentUser||currentUser.role!=="CEO"){toast("Only CEO can delete");return;}
+  if(!confirm("Delete this sale permanently?")) return;
+  setSyncStatus("Deleting...","syncing");
+  db.ref("cyber_sales").child(saleId).remove()
+    .then(()=>{toast("Deleted");setSyncStatus("Synced","synced");})
+    .catch(err=>{showFirebaseError("Delete failed: "+err.message);setSyncStatus("Error","error");});
+}
+
+buildLoginSelect();
+</script>
+</body>
+</html>
